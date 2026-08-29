@@ -254,14 +254,6 @@ print("----------------------------------------")
 
 warehouse = DataAnalytics()
 
-
-sales_task_df = sales_task_df.head(500)
-
-print("----------------------------------------")
-print("⚠️ PRUEBA CONTROLADA DE ABORTED")
-print("Registros enviados al Validation Engine:", len(sales_task_df))
-print("----------------------------------------")
-
 try:
 
     report = process_and_load(
