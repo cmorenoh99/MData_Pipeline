@@ -36,13 +36,13 @@ schema:
   permalink_url: string
 
 completeness:
-  threshold_percent: 
+  threshold_percent: 5
   critical_fields:
     - name
     - project_id
     - restaurant
+    - gid
     - id
-    - type
   # No incluidos como criticos, por ser nulos legitimos segun el negocio:
   # lost_reason (solo aplica si la tarea se perdio)
   # assigne_id / assigne_name / assigne_email (tarea puede estar sin asignar)

@@ -1,0 +1,176 @@
+{
+  "execution_id": "f34ee6ef-4733-4a97-9402-12c1151fbdbf",
+  "source": "asana_operations_task",
+  "execution_timestamp": "2026-08-29T03:29:00.241873+00:00",
+  "record_count": 2152,
+  "health_score": 100.0,
+  "validations": [
+    {
+      "validation": "uniqueness",
+      "status": "PASS",
+      "total_records": 2152,
+      "unique_records": 2152,
+      "duplicates_found": 0
+    },
+    {
+      "validation": "completeness",
+      "status": "PASS",
+      "threshold_percent": 5,
+      "fields": {
+        "name": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "project_id": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "restaurant": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "id": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "type": {
+          "status": "PASS",
+          "null_percent": 4.04,
+          "nulls": 87
+        }
+      }
+    },
+    {
+      "validation": "schema_consistency",
+      "status": "PASS",
+      "fields": {
+        "gid": {
+          "status": "PASS",
+          "expected_type": "int",
+          "actual_dtype": "int64"
+        },
+        "resource_subtype": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "name": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "project_id": {
+          "status": "PASS",
+          "expected_type": "int",
+          "actual_dtype": "int64"
+        },
+        "project_name": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "section_id": {
+          "status": "PASS",
+          "expected_type": "int",
+          "actual_dtype": "int64"
+        },
+        "section_name": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "created_at": {
+          "status": "PASS",
+          "expected_type": "timestamp",
+          "actual_dtype": "datetime64[us, UTC]"
+        },
+        "assigne_id": {
+          "status": "PASS",
+          "expected_type": "int",
+          "actual_dtype": "int64"
+        },
+        "assigne_name": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "assigne_email": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "id": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "restaurant": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "priority": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "type": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "lost_reason": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "completed": {
+          "status": "PASS",
+          "expected_type": "bool",
+          "actual_dtype": "bool"
+        },
+        "completed_at": {
+          "status": "PASS",
+          "expected_type": "timestamp",
+          "actual_dtype": "datetime64[us, UTC]"
+        },
+        "actual_time_minutes": {
+          "status": "PASS",
+          "expected_type": "int",
+          "actual_dtype": "int64"
+        },
+        "modified_at": {
+          "status": "PASS",
+          "expected_type": "timestamp",
+          "actual_dtype": "datetime64[us, UTC]"
+        },
+        "permalink_url": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        }
+      }
+    },
+    {
+      "validation": "project_integrity",
+      "status": "PASS",
+      "expected_project_id": "1216685996541408",
+      "expected_project_name": "Operaciones",
+      "mismatched_records": []
+    },
+    {
+      "validation": "volumetry",
+      "status": "INSUFFICIENT_HISTORY",
+      "current_count": 2152,
+      "history_count": 0,
+      "required_history": 3
+    }
+  ],
+  "overall_status": "PARTIAL",
+  "records_loaded": 2065,
+  "records_rejected": 87
+}

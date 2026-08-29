@@ -5,6 +5,7 @@ import requests
 import pandas as pd
 import json
 import datetime
+import sys
 import os
 from dotenv import load_dotenv
 from Utils import constants
@@ -235,13 +236,31 @@ print('--'*20)
 #warehouse = DataAnalytics()  
 #warehouse.insert_dataframe(operations_task_df, 'asana_operations_task', 'replace')
 
-
+print("----------------------------------------")
+print("Longitud sales_task_df a cargar:", len(operations_task_df))
+print("----------------------------------------")
 
 warehouse = DataAnalytics()
-report = process_and_load(
-    source_name="asana_operations_task",
-    df=operations_task_df,
-    contract_name="asana_operations_task",
-    warehouse=warehouse,
-)
-print(f"Estado: {report['overall_status']} | Health Score: {report['health_score']}")
+
+try:
+
+    report = process_and_load(
+        source_name="asana_operations_task",
+        df=operations_task_df,
+        contract_name="asana_operations_task",
+        warehouse=warehouse,
+    )
+
+    status = report.get("overall_status")
+
+    if status in ("PASS", "PARTIAL"):
+        sys.exit(0)
+
+    elif status == "ABORTED":
+        sys.exit(2)
+
+    else:
+        sys.exit(1)
+
+except Exception:
+    sys.exit(1)
