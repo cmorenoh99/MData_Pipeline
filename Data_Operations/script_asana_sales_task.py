@@ -237,16 +237,6 @@ print('--'*20)
 #warehouse.insert_dataframe(sales_task_df, 'asana_sales_task', 'replace')
 
 
-'''
-warehouse = DataAnalytics()
-report = process_and_load(
-    source_name="asana_sales_task",
-    df=sales_task_df,
-    contract_name="asana_sales_task",
-    warehouse=warehouse,
-)
-print(f"Estado: {report['overall_status']} | Health Score: {report['health_score']}")
-'''
 
 print("----------------------------------------")
 print("Longitud sales_task_df a cargar:", len(sales_task_df))
