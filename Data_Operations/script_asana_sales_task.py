@@ -5,10 +5,12 @@ import requests
 import pandas as pd
 import json
 import datetime
+import sys
 import os
 from dotenv import load_dotenv
 from Utils import constants
 from Utils.databaseConections import DataAnalytics
+from Data_Operations.validation_engine import process_and_load
 from Utils.databaseConections import SQLDatabaseConection
 load_dotenv() 
 
@@ -231,5 +233,47 @@ print('--'*20)
 
 
 # ## 12. Load
-warehouse = DataAnalytics()  
-warehouse.insert_dataframe(sales_task_df, 'asana_sales_task', 'replace')
+#warehouse = DataAnalytics()  
+#warehouse.insert_dataframe(sales_task_df, 'asana_sales_task', 'replace')
+
+
+'''
+warehouse = DataAnalytics()
+report = process_and_load(
+    source_name="asana_sales_task",
+    df=sales_task_df,
+    contract_name="asana_sales_task",
+    warehouse=warehouse,
+)
+print(f"Estado: {report['overall_status']} | Health Score: {report['health_score']}")
+'''
+
+print("----------------------------------------")
+print("Longitud sales_task_df a cargar:", len(sales_task_df))
+print("----------------------------------------")
+
+warehouse = DataAnalytics()
+
+
+try:
+
+    report = process_and_load(
+        source_name="asana_sales_task",
+        df=sales_task_df,
+        contract_name="asana_sales_task",
+        warehouse=warehouse
+    )
+
+    status = report.get("overall_status")
+
+    if status in ("PASS", "PARTIAL"):
+        sys.exit(0)
+
+    elif status == "ABORTED":
+        sys.exit(2)
+
+    else:
+        sys.exit(1)
+
+except Exception:
+    sys.exit(1)

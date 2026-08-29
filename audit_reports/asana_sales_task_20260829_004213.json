@@ -1,0 +1,175 @@
+{
+  "execution_id": "c37f079c-de3b-45f6-8c5c-3c69127565e7",
+  "source": "asana_sales_task",
+  "execution_timestamp": "2026-08-29T00:42:11.372886+00:00",
+  "record_count": 5000,
+  "health_score": 100.0,
+  "validations": [
+    {
+      "validation": "uniqueness",
+      "status": "PASS",
+      "total_records": 5000,
+      "unique_records": 5000,
+      "duplicates_found": 0
+    },
+    {
+      "validation": "completeness",
+      "status": "PASS",
+      "threshold_percent": 5,
+      "fields": {
+        "name": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "project_id": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "restaurant": {
+          "status": "PASS",
+          "null_percent": 0.02,
+          "nulls": 1
+        },
+        "id": {
+          "status": "PASS",
+          "null_percent": 0.02,
+          "nulls": 1
+        },
+        "country": {
+          "status": "PASS",
+          "null_percent": 0.02,
+          "nulls": 1
+        }
+      }
+    },
+    {
+      "validation": "schema_consistency",
+      "status": "PASS",
+      "fields": {
+        "gid": {
+          "status": "PASS",
+          "expected_type": "int",
+          "actual_dtype": "int64"
+        },
+        "resource_subtype": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "name": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "project_id": {
+          "status": "PASS",
+          "expected_type": "int",
+          "actual_dtype": "int64"
+        },
+        "project_name": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "section_id": {
+          "status": "PASS",
+          "expected_type": "int",
+          "actual_dtype": "int64"
+        },
+        "section_name": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "created_at": {
+          "status": "PASS",
+          "expected_type": "timestamp",
+          "actual_dtype": "datetime64[us, UTC]"
+        },
+        "assigne_id": {
+          "status": "PASS",
+          "expected_type": "int",
+          "actual_dtype": "int64"
+        },
+        "assigne_name": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "assigne_email": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "id": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "restaurant": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "country": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "date_sale": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "lost_reason": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "completed": {
+          "status": "PASS",
+          "expected_type": "bool",
+          "actual_dtype": "bool"
+        },
+        "completed_at": {
+          "status": "PASS",
+          "expected_type": "timestamp",
+          "actual_dtype": "datetime64[us, UTC]"
+        },
+        "actual_time_minutes": {
+          "status": "PASS",
+          "expected_type": "int",
+          "actual_dtype": "int64"
+        },
+        "modified_at": {
+          "status": "PASS",
+          "expected_type": "timestamp",
+          "actual_dtype": "datetime64[us, UTC]"
+        },
+        "permalink_url": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        }
+      }
+    },
+    {
+      "validation": "project_integrity",
+      "status": "PASS",
+      "expected_project_id": "1216713295378538",
+      "expected_project_name": "Sales",
+      "mismatched_records": []
+    },
+    {
+      "validation": "volumetry",
+      "status": "INSUFFICIENT_HISTORY",
+      "detail": "No fue posible consultar el historico: Execution failed on sql '\n        SELECT record_count FROM data_quality_audit\n        WHERE source_name = :source_name\n          AND execution_date >= NOW() - (:window_days || ' days')::interval\n        ORDER BY execution_date DESC\n    ': (psycopg2.errors.UndefinedTable) no existe la relación «data_quality_audit»\nLINE 2:         SELECT record_count FROM data_quality_audit\n                                         ^\n\n[SQL: \n        SELECT record_count FROM data_quality_audit\n        WHERE source_name = %(source_name)s\n          AND execution_date >= NOW() - (%(window_days)s || ' days')::interval\n        ORDER BY execution_date DESC\n    ]\n[parameters: {'source_name': 'asana_sales_task', 'window_days': 7}]\n(Background on this error at: https://sqlalche.me/e/20/f405)",
+      "current_count": 5000
+    }
+  ],
+  "overall_status": "PARTIAL",
+  "records_loaded": 4997,
+  "records_rejected": 3
+}

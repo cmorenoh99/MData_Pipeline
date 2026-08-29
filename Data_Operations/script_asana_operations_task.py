@@ -8,6 +8,7 @@ import datetime
 import os
 from dotenv import load_dotenv
 from Utils import constants
+from Data_Operations.validation_engine import process_and_load
 from Utils.databaseConections import DataAnalytics
 from Utils.databaseConections import SQLDatabaseConection
 load_dotenv() 
@@ -231,5 +232,16 @@ print('--'*20)
 
 
 # ## 12. Load
-warehouse = DataAnalytics()  
-warehouse.insert_dataframe(operations_task_df, 'asana_operations_task', 'replace')
+#warehouse = DataAnalytics()  
+#warehouse.insert_dataframe(operations_task_df, 'asana_operations_task', 'replace')
+
+
+
+warehouse = DataAnalytics()
+report = process_and_load(
+    source_name="asana_operations_task",
+    df=operations_task_df,
+    contract_name="asana_operations_task",
+    warehouse=warehouse,
+)
+print(f"Estado: {report['overall_status']} | Health Score: {report['health_score']}")
