@@ -1,0 +1,288 @@
+{
+  "execution_id": "4e99619d-a813-46cc-bac7-ca12ba766b31",
+  "source": "sheets_employees",
+  "execution_timestamp": "2026-08-30T04:53:46.542611+00:00",
+  "record_count": 50,
+  "health_score": 100.0,
+  "validations": [
+    {
+      "validation": "uniqueness",
+      "status": "PASS",
+      "total_records": 50,
+      "unique_records": 50,
+      "duplicates_found": 0
+    },
+    {
+      "validation": "completeness",
+      "status": "PASS",
+      "threshold_percent": 5,
+      "fields": {
+        "identification_type": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "id_country": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "id_number": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "mail_corporativo": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "name": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "company": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "department": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "team": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "role": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "join_date": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "status": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        }
+      }
+    },
+    {
+      "validation": "schema_consistency",
+      "status": "FAIL",
+      "fields": {
+        "identification_type": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "id_country": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "id_number": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "mail_corporativo": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "name": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "birthday": {
+          "status": "PASS",
+          "expected_type": "timestamp",
+          "actual_dtype": "datetime64[us]"
+        },
+        "gender": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "company": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "department": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "team": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "role": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "join_date": {
+          "status": "PASS",
+          "expected_type": "timestamp",
+          "actual_dtype": "datetime64[us]"
+        },
+        "employee_phone_number": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "personal_mail": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "country": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "city": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "address": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "profession": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "specialization": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "civil_status": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "children": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "number_of_children": {
+          "status": "FAIL",
+          "expected_type": "int",
+          "actual_dtype": "str"
+        },
+        "emergency_contact": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "emergency_relationship": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "emergency_number_contact": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "eps": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "prepagada": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "medical_conditions": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "details_medical_conditions": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "dietary_restrictions": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "blood_type": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "sweater": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "ingreso_como_referido": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "referido": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "fecha_cumplimiento_referido": {
+          "status": "PASS",
+          "expected_type": "timestamp",
+          "actual_dtype": "datetime64[us]"
+        },
+        "end_date": {
+          "status": "PASS",
+          "expected_type": "timestamp",
+          "actual_dtype": "datetime64[us]"
+        },
+        "status": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "motivo": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        }
+      }
+    },
+    {
+      "validation": "project_integrity",
+      "status": "NOT_APPLICABLE"
+    },
+    {
+      "validation": "volumetry",
+      "status": "INSUFFICIENT_HISTORY",
+      "current_count": 50,
+      "history_count": 0,
+      "required_history": 3
+    }
+  ],
+  "overall_status": "PASS",
+  "records_loaded": 50,
+  "records_rejected": 0
+}
