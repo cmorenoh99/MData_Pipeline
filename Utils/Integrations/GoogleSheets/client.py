@@ -73,11 +73,24 @@ class SheetsConection(Transform):
             clean_sheet = clean_sheet.replace("n/a", pd.NA) # reemplazar n/a por null
             if range.get("columns_config",None) is not None and range['columns_config'].get("dates",None) is not None:
                 clean_sheet = self.convert_dates(clean_sheet, date_columns=list(range['columns_config']['dates']['date_columns']))
-            if range.get("columns_config",None) is not None and range['columns_config'].get("dtypes",None) is not None:
-                dtypes = range['columns_config']["dtypes"]
+            if (
+                range.get("columns_config", None) is not None
+                and range["columns_config"].get("dtypes", None) is not None
+            ):
+                dtypes = range["columns_config"]["dtypes"]
+
                 if self.clean_numeric:
                     clean_sheet = self.clean_numeric_columns(clean_sheet, dtypes)
-                clean_sheet = clean_sheet.astype(dtypes)
+
+                skip_cast = range["columns_config"].get("skip_cast", [])
+
+                dtypes_to_apply = {
+                    col: dtype
+                    for col, dtype in dtypes.items()
+                    if col not in skip_cast
+                }
+
+                clean_sheet = clean_sheet.astype(dtypes_to_apply)
             self.sheets_map[range['name']] = clean_sheet
     
     def get_page(self,name:str)->pd.DataFrame:

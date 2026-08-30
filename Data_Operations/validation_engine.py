@@ -403,9 +403,28 @@ def check_completeness(df: pd.DataFrame, contract: dict) -> dict:
 # 3. VOLUMETRIA (Z-SCORE)
 # ---------------------------------------------------------------------
 
-def check_volumetry(df: pd.DataFrame,  contract: dict,  engine,  source_name: str,  window_days: int = 30,  min_history: int = 3) -> dict:
+def check_volumetry(
+    df: pd.DataFrame,
+    contract: dict,
+    engine,
+    source_name: str,
+    window_days: int = 30,
+    min_history: int = 3
+) -> dict:
 
     current_count = len(df)
+
+    volumetry_config = contract.get("volumetry", {})
+
+    window_days = volumetry_config.get(
+        "window_days",
+        window_days
+    )
+
+    threshold = volumetry_config.get(
+        "z_score_threshold",
+        3.0
+    )
 
     query = sa_text("""
         SELECT record_count
@@ -473,8 +492,6 @@ def check_volumetry(df: pd.DataFrame,  contract: dict,  engine,  source_name: st
             current_count - historical_mean
         ) / historical_std
 
-    threshold = 3.0
-
     status = (
         "PASS"
         if abs(z_score) <= threshold
@@ -489,7 +506,8 @@ def check_volumetry(df: pd.DataFrame,  contract: dict,  engine,  source_name: st
         "historical_std": historical_std,
         "z_score": z_score,
         "threshold": threshold,
-        "history_count": len(historical_counts)
+        "history_count": len(historical_counts),
+        "window_days": window_days
     }
 
 
@@ -735,6 +753,127 @@ def _notify_team(source_name: str, report: dict) -> None:
     print(f"[ALERTA] Fallo de calidad en '{source_name}': {report.get('overall_status')}")
 
 
+def _print_validation_summary(report: dict, df_invalid: pd.DataFrame = None) -> None:
+    """
+    Imprime un resumen legible del resultado de validación.
+    Diseñado para facilitar auditoría, troubleshooting y evidencias del TFM.
+    """
+
+    print("----------------------------------------")
+    print("RESULTADO VALIDATION ENGINE")
+    print("----------------------------------------")
+
+    print(f"Fuente:              {report['source']}")
+    print(f"Execution ID:        {report['execution_id']}")
+    print(f"Registros recibidos: {report['record_count']}")
+    print(f"Registros cargados:  {report.get('records_loaded', 0)}")
+    print(f"Registros rechazados:{report.get('records_rejected', 0)}")
+    print(f"Health Score:        {report['health_score']}")
+    print(f"Estado general:      {report['overall_status']}")
+
+    print("----------------------------------------")
+    print("VALIDACIONES")
+    print("----------------------------------------")
+
+    for validation in report["validations"]:
+
+        name = validation["validation"]
+        status = validation["status"]
+
+        if status == "PASS":
+            icon = "✓"
+        elif status == "FAIL":
+            icon = "✗"
+        elif status == "INSUFFICIENT_HISTORY":
+            icon = "⚠"
+        else:
+            icon = "•"
+
+        print(f"{icon} {name:<22} {status}")
+
+    print("----------------------------------------")
+    print("INCIDENCIAS")
+    print("----------------------------------------")
+
+    if df_invalid is not None and not df_invalid.empty:
+
+        print(f"Registros afectados: {len(df_invalid)}")
+
+        if "_validation_reasons" in df_invalid.columns:
+
+            reasons = (
+                df_invalid["_validation_reasons"]
+                .dropna()
+                .astype(str)
+            )
+
+            for reason in reasons:
+
+                for item in reason.split(","):
+
+                    item = item.strip()
+
+                    if item.startswith("null_critical_field:"):
+                        field = item.replace(
+                            "null_critical_field:",
+                            ""
+                        )
+
+                        print(
+                            f"✗ Campo crítico nulo: {field}"
+                        )
+
+                    elif item == "duplicate_gid":
+                        print(
+                            "✗ Identificador duplicado"
+                        )
+
+                    elif item == "project_mismatch":
+                        print(
+                            "✗ Inconsistencia de proyecto"
+                        )
+
+                    elif item == "volumetry_anomaly":
+                        print(
+                            "✗ Anomalía de volumetría"
+                        )
+
+                    else:
+                        print(
+                            f"✗ {item}"
+                        )
+
+    else:
+
+        print("✓ No se detectaron registros rechazados.")
+
+    print("----------------------------------------")
+    print("RESUMEN")
+    print("----------------------------------------")
+
+    if report["overall_status"] == "PASS":
+
+        print("✓ Ejecución completada correctamente.")
+
+    elif report["overall_status"] == "PARTIAL":
+
+        print("⚠ Ejecución completada parcialmente.")
+        print(
+            "  Los registros inválidos fueron "
+            "redirigidos a la tabla de errores."
+        )
+
+    elif report["overall_status"] == "ABORTED":
+
+        print("✗ Ejecución ABORTADA por calidad de datos.")
+
+    else:
+
+        print("✗ Ejecución finalizada con errores.")
+
+    print("----------------------------------------")
+
+
 def process_and_load(source_name: str, df: pd.DataFrame, contract_name: str, warehouse, key_columns: str = None) -> dict:
     """
     Objetivo 3: ejecuta las 5 validaciones, decide el enrutamiento y
@@ -823,6 +962,13 @@ def process_and_load(source_name: str, df: pd.DataFrame, contract_name: str, war
             _load_with_bootstrap(warehouse, df_errors, f"{source_name}_errors", insert_type="append")
             _notify_team(source_name, report)
             _write_audit_report(report, source_name)
+            report["records_loaded"] = 0
+            report["records_rejected"] = len(df)
+
+            _print_validation_summary(
+                report,
+                df_errors
+            )
 
             return report
 
@@ -834,13 +980,22 @@ def process_and_load(source_name: str, df: pd.DataFrame, contract_name: str, war
             _load_with_bootstrap(warehouse, df_valid, source_name, insert_type="upsert", key_columns=key_columns)
 
         if not df_invalid.empty:
-            _load_with_bootstrap(warehouse, df_invalid, f"{source_name}_errors", insert_type="append")
+            _load_with_bootstrap(
+                warehouse,
+                df_invalid,
+                f"{source_name}_errors",
+                insert_type="append"
+            )
             _notify_team(source_name, report)
-
 
         report["overall_status"] = "PASS" if df_invalid.empty else "PARTIAL"
         report["records_loaded"] = len(df_valid)
         report["records_rejected"] = len(df_invalid)
+
+        _print_validation_summary(
+            report,
+            df_invalid
+        )
 
         duration_seconds = time.perf_counter() - start_time
 
