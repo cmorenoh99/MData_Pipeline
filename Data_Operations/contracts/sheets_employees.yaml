@@ -1,0 +1,72 @@
+# Contrato de datos - Fuente: Google Sheets, hoja Employees
+# Tabla destino: sheets_employees
+# TFM - Framework de observabilidad y validación de integridad de datos
+# Autor: Camila Moreno Higuita
+
+source:
+  name: sheets_employees
+  type: google_sheets
+  description: Información de empleados proveniente de la hoja Employees de People & Culture
+
+identifier:
+  field: id_number
+  type: string
+
+schema:
+  identification_type: string
+  id_country: string
+  id_number: string
+  mail_corporativo: string
+  name: string
+  birthday: timestamp
+  gender: string
+  company: string
+  department: string
+  team: string
+  role: string
+  join_date: timestamp
+  employee_phone_number: string
+  personal_mail: string
+  country: string
+  city: string
+  address: string
+  profession: string
+  specialization: string
+  civil_status: string
+  children: string
+  number_of_children: int
+  emergency_contact: string
+  emergency_relationship: string
+  emergency_number_contact: string
+  eps: string
+  prepagada: string
+  medical_conditions: string
+  details_medical_conditions: string
+  dietary_restrictions: string
+  blood_type: string
+  sweater: string
+  ingreso_como_referido: string
+  referido: string
+  fecha_cumplimiento_referido: timestamp
+  end_date: timestamp
+  status: string
+  motivo: string
+
+completeness:
+  threshold_percent: 5
+  critical_fields:
+    - identification_type
+    - id_country
+    - id_number
+    - mail_corporativo
+    - name
+    - company
+    - department
+    - team
+    - role
+    - join_date
+    - status
+
+volumetry:
+  window_days: 7
+  z_score_threshold: 3

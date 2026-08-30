@@ -781,6 +781,12 @@ def process_and_load(source_name: str, df: pd.DataFrame, contract_name: str, war
             volumetry_result
         ]
 
+        if "project_integrity" in contract:
+            results.insert(
+                3,
+                check_project_integrity(df, contract)
+            )
+
         save_validation_results( warehouse=warehouse, execution_id=execution_id, results=results)
         save_volume_history(warehouse=warehouse, execution_id=execution_id, source_name=source_name,  result=volumetry_result)
 
