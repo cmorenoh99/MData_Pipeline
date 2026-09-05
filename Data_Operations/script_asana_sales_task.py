@@ -236,8 +236,46 @@ print('--'*20)
 #warehouse = DataAnalytics()  
 #warehouse.insert_dataframe(sales_task_df, 'asana_sales_task', 'replace')
 
+# ============================================================
+# PRUEBA CONTROLADA - INCONSISTENCIA DE ESQUEMA
+# ============================================================
 
+# Copia del DataFrame original para no modificar los datos reales
+sales_task_df_test = sales_task_df.copy()
 
+# Provocar inconsistencia:
+# Contrato -> project_id: int
+# Datos enviados al motor -> project_id: string
+sales_task_df_test["project_id"] = (
+    sales_task_df_test["project_id"].astype(str)
+)
+
+warehouse = DataAnalytics()
+
+try:
+
+    report = process_and_load(
+        source_name="asana_sales_task",
+        df=sales_task_df_test,
+        contract_name="asana_sales_task",
+        warehouse=warehouse
+    )
+
+    status = report.get("overall_status")
+
+    if status in ("PASS", "PARTIAL"):
+        sys.exit(0)
+
+    elif status == "ABORTED":
+        sys.exit(2)
+
+    else:
+        sys.exit(1)
+
+except Exception:
+    sys.exit(1)
+
+'''
 print("----------------------------------------")
 print("Longitud sales_task_df a cargar:", len(sales_task_df))
 print("----------------------------------------")
@@ -266,3 +304,4 @@ try:
 
 except Exception:
     sys.exit(1)
+'''
