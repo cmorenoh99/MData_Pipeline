@@ -1,0 +1,224 @@
+"""
+Genera un resumen HTML del estado de calidad de todas las fuentes
+procesadas en la ejecucion actual del pipeline.
+
+Se ejecuta desde el bloque post del Jenkinsfile. Lee los informes de
+audit_reports/ generados DURANTE este build (los posteriores al fichero
+marcador .build_marker) y produce un HTML listo para incrustar en el correo.
+
+Uso:
+    python3 -m Data_Operations.build_quality_report \
+        --marker .build_marker \
+        --output build_quality_report.html
+
+Salida por stdout (para el log de Jenkins):
+    BUILD_STATUS=FAILURE|ABORTED|SUCCESS
+    FAILED_SOURCES=asana_sales_task,sheets_employees
+"""
+
+import argparse
+import glob
+import html
+import json
+import os
+import sys
+
+REPORTS_DIR = "audit_reports"
+
+# Estados que se consideran problematicos para el resumen
+PROBLEM_STATES = {"FAIL", "ABORTED", "PARTIAL", "ERROR"}
+
+STATE_COLORS = {
+    "PASS": "#28a745",
+    "PARTIAL": "#f0ad4e",
+    "ABORTED": "#f0ad4e",
+    "FAIL": "#dc3545",
+    "ERROR": "#dc3545",
+}
+
+
+def load_reports_since(marker_path):
+    """
+    Devuelve el informe mas reciente de cada fuente, considerando
+    unicamente los ficheros creados despues del marcador de inicio
+    de build. Evita arrastrar informes de ejecuciones anteriores.
+    """
+    if os.path.exists(marker_path):
+        cutoff = os.path.getmtime(marker_path)
+    else:
+        # Sin marcador no se puede acotar el build: se avisa y no se filtra.
+        print("AVISO: no se encontro el fichero marcador, no se filtra por build.",
+              file=sys.stderr)
+        cutoff = 0
+
+    latest_by_source = {}
+
+    for path in glob.glob(os.path.join(REPORTS_DIR, "*.json")):
+        if os.path.getmtime(path) < cutoff:
+            continue
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                report = json.load(f)
+        except (json.JSONDecodeError, OSError) as exc:
+            print(f"AVISO: no se pudo leer {path}: {exc}", file=sys.stderr)
+            continue
+
+        source = report.get("source", "desconocida")
+        current = latest_by_source.get(source)
+
+        # Se conserva el informe con marca temporal mas reciente por fuente
+        if current is None or os.path.getmtime(path) > current["_mtime"]:
+            report["_mtime"] = os.path.getmtime(path)
+            report["_file"] = os.path.basename(path)
+            latest_by_source[source] = report
+
+    return latest_by_source
+
+
+def failed_validations(report):
+    """Nombres de las validaciones que no pasaron, ignorando las no aplicables."""
+    names = []
+    for validation in report.get("validations", []):
+        if validation.get("status") in {"FAIL", "ERROR"}:
+            names.append(validation.get("validation", "desconocida"))
+    return names
+
+
+def render_source_block(report):
+    """Construye la tabla HTML correspondiente a una fuente."""
+    source = html.escape(str(report.get("source", "desconocida")))
+    status = str(report.get("overall_status", "No disponible"))
+    color = STATE_COLORS.get(status, "#6c757d")
+
+    received = report.get("record_count", report.get("records_received", "No disponible"))
+    loaded = report.get("records_loaded", "No disponible")
+    rejected = report.get("records_rejected", "No disponible")
+    score = report.get("health_score", "No disponible")
+    execution_id = html.escape(str(report.get("execution_id", "No disponible")))
+
+    failures = failed_validations(report)
+    failures_text = ", ".join(failures) if failures else "Ninguna"
+
+    rows = f"""
+        <tr><td><b>Execution ID</b></td><td><code>{execution_id}</code></td></tr>
+        <tr><td><b>Estado</b></td>
+            <td style="color:{color};"><b>{html.escape(status)}</b></td></tr>
+        <tr><td><b>Health Score</b></td><td><b>{html.escape(str(score))}</b></td></tr>
+        <tr><td><b>Validaciones fallidas</b></td>
+            <td>{html.escape(failures_text)}</td></tr>
+        <tr><td><b>Registros recibidos</b></td><td>{html.escape(str(received))}</td></tr>
+        <tr><td><b>Registros cargados</b></td><td>{html.escape(str(loaded))}</td></tr>
+        <tr><td><b>Registros rechazados</b></td><td>{html.escape(str(rejected))}</td></tr>
+    """
+
+    impact_html = render_impact(report)
+
+    return f"""
+    <h3 style="margin-bottom:4px;">
+        <span style="color:{color};">&#9679;</span> {source}
+    </h3>
+    <table border="1" cellpadding="6" cellspacing="0"
+           style="border-collapse:collapse;width:100%;margin-bottom:8px;">
+        {rows}
+    </table>
+    {impact_html}
+    """
+
+
+def render_impact(report):
+    """Bloque de Impact Analysis, si el informe lo incluye."""
+    impact = report.get("impact_analysis")
+
+    if isinstance(impact, list):
+        impact = impact[0] if impact else None
+
+    if not isinstance(impact, dict):
+        return ""
+
+    assets = impact.get("downstream_assets") or []
+
+    if assets:
+        items = "".join(
+            "<li>{} ({}) &mdash; responsable: {}</li>".format(
+                html.escape(str(a.get("name", "No disponible"))),
+                html.escape(str(a.get("type", "No disponible"))),
+                html.escape(str(a.get("owner", "No disponible"))),
+            )
+            for a in assets
+        )
+        assets_html = f"<ul>{items}</ul>"
+    else:
+        assets_html = "<p>No se identificaron activos analiticos dependientes.</p>"
+
+    return f"""
+    <p style="margin:4px 0;">
+        <b>Impact Analysis:</b>
+        {html.escape(str(impact.get("impact_status", "No disponible")))}
+        &mdash; nodos del grafo:
+        {html.escape(str(impact.get("lineage_nodes", "No disponible")))}
+    </p>
+    {assets_html}
+    """
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--marker", default=".build_marker")
+    parser.add_argument("--output", default="build_quality_report.html")
+    args = parser.parse_args()
+
+    reports = load_reports_since(args.marker)
+
+    if not reports:
+        body = "<p>No se encontraron informes de auditoria para esta ejecucion.</p>"
+        with open(args.output, "w", encoding="utf-8") as f:
+            f.write(body)
+        print("BUILD_STATUS=SUCCESS")
+        print("FAILED_SOURCES=")
+        return
+
+    problem_sources = []
+    blocks = []
+
+    # Orden estable: primero las fuentes con problemas
+    ordered = sorted(
+        reports.values(),
+        key=lambda r: (r.get("overall_status") == "PASS", r.get("source", "")),
+    )
+
+    for report in ordered:
+        blocks.append(render_source_block(report))
+        if report.get("overall_status") in PROBLEM_STATES:
+            problem_sources.append(report.get("source", "desconocida"))
+
+    if problem_sources:
+        summary = (
+            "<p>Se detectaron incidencias de calidad en "
+            f"<b>{len(problem_sources)}</b> de <b>{len(reports)}</b> fuentes: "
+            f"<b>{html.escape(', '.join(problem_sources))}</b>.</p>"
+        )
+    else:
+        summary = (
+            f"<p>Las <b>{len(reports)}</b> fuentes procesadas superaron "
+            "todas las validaciones.</p>"
+        )
+
+    with open(args.output, "w", encoding="utf-8") as f:
+        f.write(summary + "\n".join(blocks))
+
+    # Un ABORTED es una parada controlada por calidad; un FAIL es mas grave.
+    states = {r.get("overall_status") for r in reports.values()}
+
+    if "FAIL" in states or "ERROR" in states:
+        build_status = "FAILURE"
+    elif "ABORTED" in states:
+        build_status = "ABORTED"
+    else:
+        build_status = "SUCCESS"
+
+    print(f"BUILD_STATUS={build_status}")
+    print(f"FAILED_SOURCES={','.join(problem_sources)}")
+
+
+if __name__ == "__main__":
+    main()
