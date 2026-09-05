@@ -24,6 +24,13 @@ from datetime import datetime, timezone
 from sqlalchemy import text as sa_text
 
 from Utils.contract_loader import load_contract
+from Utils.lineage import (
+    start_lineage_run,
+    complete_lineage_run,
+    abort_lineage_run,
+    fail_lineage_run,
+)
+from Utils.impact_analysis import analyze_source_impact
 
 
 def create_execution(warehouse, source_name: str, record_count: int) -> str:
@@ -339,6 +346,42 @@ def save_volume_history(warehouse, execution_id: str, source_name: str, result: 
                 )
             }
         )
+
+def run_impact_analysis(
+    source_name,
+    execution_id,
+    issue
+):
+    """
+    Ejecuta el análisis de impacto para una incidencia
+    detectada durante la validación de datos.
+    """
+
+    try:
+
+        impact_result = analyze_source_impact(
+            source_name=source_name,
+            execution_id=execution_id,
+            issue=issue
+        )
+
+        return impact_result
+
+    except Exception as e:
+
+        print(
+            f"[IMPACT ANALYSIS] Error ejecutando análisis "
+            f"de impacto: {e}"
+        )
+
+        return {
+            "execution_id": execution_id,
+            "dataset": source_name,
+            "issue": issue,
+            "impact_status": "IMPACT_ANALYSIS_ERROR",
+            "downstream_assets": []
+        }
+
 # ---------------------------------------------------------------------
 # 1. UNICIDAD
 # ---------------------------------------------------------------------
@@ -753,125 +796,158 @@ def _notify_team(source_name: str, report: dict) -> None:
     print(f"[ALERTA] Fallo de calidad en '{source_name}': {report.get('overall_status')}")
 
 
-def _print_validation_summary(report: dict, df_invalid: pd.DataFrame = None) -> None:
+def _print_validation_summary(report):
     """
-    Imprime un resumen legible del resultado de validación.
-    Diseñado para facilitar auditoría, troubleshooting y evidencias del TFM.
+    Imprime un resumen estructurado de la ejecución del Validation Engine.
+
+    Las validaciones se muestran una sola vez. Las validaciones a nivel
+    de lote (por ejemplo, volumetría) no se repiten por cada registro
+    rechazado.
     """
 
-    print("----------------------------------------")
+    print("-" * 40)
     print("RESULTADO VALIDATION ENGINE")
-    print("----------------------------------------")
+    print("-" * 40)
 
-    print(f"Fuente:              {report['source']}")
-    print(f"Execution ID:        {report['execution_id']}")
-    print(f"Registros recibidos: {report['record_count']}")
+    print(f"Fuente:              {report.get('source', 'N/A')}")
+    print(f"Execution ID:        {report.get('execution_id', 'N/A')}")
+    print(f"Registros recibidos: {report.get('record_count', 0)}")
     print(f"Registros cargados:  {report.get('records_loaded', 0)}")
-    print(f"Registros rechazados:{report.get('records_rejected', 0)}")
-    print(f"Health Score:        {report['health_score']}")
-    print(f"Estado general:      {report['overall_status']}")
+    print(f"Registros rechazados: {report.get('records_rejected', 0)}")
+    print(f"Health Score:        {report.get('health_score', 0)}")
+    print(f"Estado general:      {report.get('overall_status', 'N/A')}")
 
-    print("----------------------------------------")
+    print("-" * 40)
     print("VALIDACIONES")
-    print("----------------------------------------")
+    print("-" * 40)
 
-    for validation in report["validations"]:
+    validations = report.get("validations", [])
 
-        name = validation["validation"]
-        status = validation["status"]
+    for validation in validations:
+
+        name = validation.get("validation", "N/A")
+        status = validation.get("status", "N/A")
 
         if status == "PASS":
-            icon = "✓"
+            symbol = "✓"
         elif status == "FAIL":
-            icon = "✗"
+            symbol = "✗"
+        elif status == "NOT_APPLICABLE":
+            symbol = "•"
         elif status == "INSUFFICIENT_HISTORY":
-            icon = "⚠"
+            symbol = "•"
         else:
-            icon = "•"
+            symbol = "!"
 
-        print(f"{icon} {name:<22} {status}")
+        print(f"{symbol} {name:<20} {status}")
 
-    print("----------------------------------------")
-    print("INCIDENCIAS")
-    print("----------------------------------------")
+    # ---------------------------------------------------------
+    # INCIDENCIAS
+    # ---------------------------------------------------------
 
-    if df_invalid is not None and not df_invalid.empty:
+    failed_validations = [
+        validation
+        for validation in validations
+        if validation.get("status") == "FAIL"
+    ]
 
-        print(f"Registros afectados: {len(df_invalid)}")
+    if failed_validations:
 
-        if "_validation_reasons" in df_invalid.columns:
+        print("-" * 40)
+        print("INCIDENCIAS")
+        print("-" * 40)
 
-            reasons = (
-                df_invalid["_validation_reasons"]
-                .dropna()
-                .astype(str)
-            )
+        records_rejected = report.get("records_rejected", 0)
 
-            for reason in reasons:
+        print(f"Lote afectado:       {records_rejected} registros")
 
-                for item in reason.split(","):
+        for validation in failed_validations:
 
-                    item = item.strip()
+            name = validation.get("validation", "N/A")
 
-                    if item.startswith("null_critical_field:"):
-                        field = item.replace(
-                            "null_critical_field:",
-                            ""
-                        )
+            # -------------------------------------------------
+            # Validaciones a nivel de lote
+            # -------------------------------------------------
 
-                        print(
-                            f"✗ Campo crítico nulo: {field}"
-                        )
+            if name == "volumetry":
 
-                    elif item == "duplicate_gid":
-                        print(
-                            "✗ Identificador duplicado"
-                        )
+                print("✗ Anomalía de volumetría")
 
-                    elif item == "project_mismatch":
-                        print(
-                            "✗ Inconsistencia de proyecto"
-                        )
+                message = validation.get("message")
 
-                    elif item == "volumetry_anomaly":
-                        print(
-                            "✗ Anomalía de volumetría"
-                        )
+                if message:
+                    print(f"  {message}")
 
-                    else:
-                        print(
-                            f"✗ {item}"
-                        )
+            # -------------------------------------------------
+            # Validaciones que afectan registros individuales
+            # -------------------------------------------------
 
-    else:
+            else:
 
-        print("✓ No se detectaron registros rechazados.")
+                print(f"✗ Fallo en validación: {name}")
 
-    print("----------------------------------------")
+                message = validation.get("message")
+
+                if message:
+                    print(f"  {message}")
+
+        # -----------------------------------------------------
+        # Información adicional cuando el lote fue abortado
+        # -----------------------------------------------------
+
+        if report.get("overall_status") == "ABORTED":
+
+            print()
+            print("⚠ El lote completo fue rechazado.")
+            print(f"⚠ Registros no cargados: {records_rejected}")
+
+    # ---------------------------------------------------------
+    # RESUMEN FINAL
+    # ---------------------------------------------------------
+
+    print("-" * 40)
     print("RESUMEN")
-    print("----------------------------------------")
+    print("-" * 40)
 
-    if report["overall_status"] == "PASS":
+    status = report.get("overall_status")
+
+    if status == "PASS":
 
         print("✓ Ejecución completada correctamente.")
 
-    elif report["overall_status"] == "PARTIAL":
+    elif status == "PARTIAL":
 
         print("⚠ Ejecución completada parcialmente.")
         print(
-            "  Los registros inválidos fueron "
-            "redirigidos a la tabla de errores."
+            f"⚠ Registros cargados: "
+            f"{report.get('records_loaded', 0)}"
+        )
+        print(
+            f"⚠ Registros rechazados: "
+            f"{report.get('records_rejected', 0)}"
         )
 
-    elif report["overall_status"] == "ABORTED":
+    elif status == "ABORTED":
 
         print("✗ Ejecución ABORTADA por calidad de datos.")
+        print(
+            f"✗ Registros cargados: "
+            f"{report.get('records_loaded', 0)}"
+        )
+        print(
+            f"✗ Registros rechazados: "
+            f"{report.get('records_rejected', 0)}"
+        )
+
+    elif status == "ERROR":
+
+        print("✗ Ejecución finalizada con ERROR.")
 
     else:
 
-        print("✗ Ejecución finalizada con errores.")
+        print(f"Estado de ejecución: {status}")
 
-    print("----------------------------------------")
+    print("-" * 40)
 
 
 def process_and_load(source_name: str, df: pd.DataFrame, contract_name: str, warehouse, key_columns: str = None) -> dict:
@@ -895,6 +971,10 @@ def process_and_load(source_name: str, df: pd.DataFrame, contract_name: str, war
         warehouse=warehouse,
         source_name=source_name,
         record_count=len(df)
+    )
+    start_lineage_run(
+        run_id=execution_id,
+        source_name=source_name
     )
 
     try:
@@ -920,17 +1000,11 @@ def process_and_load(source_name: str, df: pd.DataFrame, contract_name: str, war
             volumetry_result
         ]
 
-        if "project_integrity" in contract:
-            results.insert(
-                3,
-                check_project_integrity(df, contract)
-            )
 
         save_validation_results( warehouse=warehouse, execution_id=execution_id, results=results)
         save_volume_history(warehouse=warehouse, execution_id=execution_id, source_name=source_name,  result=volumetry_result)
 
-        health_score = calculate_health_score(results, contract )
-        abort, abort_reason = should_abort_batch(results, contract)
+        health_score = calculate_health_score(results, contract)
 
         report = {
             "execution_id": execution_id,
@@ -941,8 +1015,67 @@ def process_and_load(source_name: str, df: pd.DataFrame, contract_name: str, war
             "validations": results,
         }
 
+        schema_failed = any(
+            r["validation"] == "schema_consistency"
+            and r["status"] == "FAIL"
+            for r in results
+        )
+
+        abort, abort_reason = should_abort_batch(
+            results,
+            contract
+        )
+
+        if schema_failed:
+            report["overall_status"] = "FAIL"
+            report["failure_reason"] = "schema_inconsistency"
+            report["records_loaded"] = 0
+            report["records_rejected"] = len(df)
+
+            impact_result = run_impact_analysis(
+                source_name=source_name,
+                execution_id=execution_id,
+                issue="schema_inconsistency"
+            )
+
+            report["impact_analysis"] = [impact_result]
+
+            duration_seconds = time.perf_counter() - start_time
+
+            update_execution(
+                warehouse=warehouse,
+                execution_id=execution_id,
+                health_score=health_score,
+                overall_status="FAIL",
+                records_loaded=0,
+                records_rejected=len(df),
+                duration_seconds=duration_seconds
+            )
+
+            _notify_team(source_name, report)
+            _write_audit_report(report, source_name)
+
+            _print_validation_summary(report)
+
+            fail_lineage_run( run_id=execution_id, source_name=source_name)
+
+            return report
+
+
         if abort:
             report["overall_status"] = "ABORTED"
+            report["abort_reason"] = abort_reason
+            report["records_loaded"] = 0
+            report["records_rejected"] = len(df)
+
+            if abort_reason == "volumetry_anomaly":
+                impact_result = run_impact_analysis(
+                    source_name=source_name,
+                    execution_id=execution_id,
+                    issue="volumetry_anomaly"
+                )
+
+                report["impact_analysis"] = [impact_result]
 
             duration_seconds = time.perf_counter() - start_time
 
@@ -955,22 +1088,62 @@ def process_and_load(source_name: str, df: pd.DataFrame, contract_name: str, war
                 records_rejected=len(df),
                 duration_seconds=duration_seconds
             )
-            report["abort_reason"] = abort_reason
+
             df_errors = df.copy()
             df_errors["_validation_reasons"] = abort_reason
-            save_error_results(warehouse=warehouse, execution_id=execution_id, source_name=source_name, df_invalid=df_errors, contract=contract)
-            _load_with_bootstrap(warehouse, df_errors, f"{source_name}_errors", insert_type="append")
+
+            save_error_results(
+                warehouse=warehouse,
+                execution_id=execution_id,
+                source_name=source_name,
+                df_invalid=df_errors,
+                contract=contract
+            )
+
+            _load_with_bootstrap(
+                warehouse,
+                df_errors,
+                f"{source_name}_errors",
+                insert_type="append"
+            )
+
             _notify_team(source_name, report)
             _write_audit_report(report, source_name)
-            report["records_loaded"] = 0
-            report["records_rejected"] = len(df)
 
-            _print_validation_summary(
-                report,
-                df_errors
+            _print_validation_summary(report)
+
+            abort_lineage_run(
+                run_id=execution_id,
+                source_name=source_name
             )
 
             return report
+
+        failed_issues = [
+            r["validation"]
+            for r in results
+            if r["status"] == "FAIL"
+            and r["validation"] in {
+                "uniqueness",
+                "completeness",
+                "project_integrity"
+            }
+        ]
+
+        impact_results = []
+
+        for issue in failed_issues:
+
+            impact_result = run_impact_analysis(
+                source_name=source_name,
+                execution_id=execution_id,
+                issue=issue
+            )
+
+            impact_results.append(impact_result)
+
+        if impact_results:
+            report["impact_analysis"] = [impact_result]
 
         df_valid, df_invalid = route_records(df, contract)
 
@@ -992,10 +1165,7 @@ def process_and_load(source_name: str, df: pd.DataFrame, contract_name: str, war
         report["records_loaded"] = len(df_valid)
         report["records_rejected"] = len(df_invalid)
 
-        _print_validation_summary(
-            report,
-            df_invalid
-        )
+        _print_validation_summary(report)
 
         duration_seconds = time.perf_counter() - start_time
 
@@ -1009,6 +1179,11 @@ def process_and_load(source_name: str, df: pd.DataFrame, contract_name: str, war
             duration_seconds=duration_seconds
         )
 
+        complete_lineage_run(
+            run_id=execution_id,
+            source_name=source_name
+        )
+
         _write_audit_report(report, source_name)
 
         return report
@@ -1018,6 +1193,14 @@ def process_and_load(source_name: str, df: pd.DataFrame, contract_name: str, war
         duration_seconds = (
             time.perf_counter() - start_time
         )
+
+        try:
+            fail_lineage_run(
+                run_id=execution_id,
+                source_name=source_name
+            )
+        except Exception:
+            pass
 
         mark_execution_error(
             warehouse=warehouse,

@@ -15,3 +15,4 @@ tqdm
 fuzzywuzzy
 python-Levenshtein
 ShopifyAPI
+openlineage-python==1.53.0

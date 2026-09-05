@@ -70,3 +70,10 @@ completeness:
 volumetry:
   window_days: 7
   z_score_threshold: 3
+
+health_score:
+  weights:
+    uniqueness: 0.20
+    completeness: 0.30
+    schema_consistency: 0.20
+    volumetry: 0.30
