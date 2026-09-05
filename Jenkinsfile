@@ -8,11 +8,13 @@ pipeline {
     environment {
         TOKEN_ACCESO_ASANA = credentials('TOKEN_ACCESO_ASANA')
         DATABASE_DATANALYTICS_PASSWORD = credentials('DATABASE_DATANALYTICS_PASSWORD')
-
+    
         DATABASE_DATANALYTICS_NAME = "postgres"
         DATABASE_DATANALYTICS_USER = "postgres"
         DATABASE_DATANALYTICS_HOST = "host.docker.internal"
         DATABASE_DATANALYTICS_PORT = "5432"
+    
+        OPENLINEAGE_URL = "http://marquez-api:5000"
     }
 
     stages {
