@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  jenkins:
+    build: .
+    container_name: jenkins
+
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /var/jenkins_home/.config/gcloud/application_default_credentials.json
+
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - ./credentials/application_default_credentials.json:/var/jenkins_home/.config/gcloud/application_default_credentials.json:ro
+
+    restart: unless-stopped
+
+volumes:
+  jenkins_home:
