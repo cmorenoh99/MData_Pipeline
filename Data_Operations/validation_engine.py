@@ -251,6 +251,12 @@ def save_error_results(warehouse, execution_id: str, source_name: str, df_invali
                 error_type = "VOLUMETRY_ANOMALY"
                 error_detail = "batch_volume"
 
+            elif reason == "schema_break_on_identifier":     # ← NUEVO
+
+                validation_name = "schema_consistency"
+                error_type = "SCHEMA_BREAK"
+                error_detail = "identifier_or_project_id"
+
             else:
 
                 validation_name = "unknown"
@@ -895,7 +901,7 @@ def _print_validation_summary(report):
         # Información adicional cuando el lote fue abortado
         # -----------------------------------------------------
 
-        if report.get("overall_status") == "ABORTED":
+        if report.get("overall_status") in ("ABORTED", "FAIL"):
 
             print()
             print("⚠ El lote completo fue rechazado.")
@@ -938,6 +944,12 @@ def _print_validation_summary(report):
             f"✗ Registros rechazados: "
             f"{report.get('records_rejected', 0)}"
         )
+
+    elif status == "FAIL":                                   
+
+        print("✗ Ejecución BLOQUEADA por calidad de datos.")
+        print(f"✗ Registros cargados: {report.get('records_loaded', 0)}")
+        print(f"✗ Registros rechazados: {report.get('records_rejected', 0)}")
 
     elif status == "ERROR":
 
@@ -1015,29 +1027,35 @@ def process_and_load(source_name: str, df: pd.DataFrame, contract_name: str, war
             "validations": results,
         }
 
-        schema_failed = any(
-            r["validation"] == "schema_consistency"
-            and r["status"] == "FAIL"
-            for r in results
-        )
-
         abort, abort_reason = should_abort_batch(
             results,
             contract
         )
 
-        if schema_failed:
-            report["overall_status"] = "FAIL"
-            report["failure_reason"] = "schema_inconsistency"
+        if abort:
+
+            if abort_reason == "schema_break_on_identifier":
+                blocking_status = "FAIL"
+                report["failure_reason"] = abort_reason
+            else:
+                blocking_status = "ABORTED"
+                report["abort_reason"] = abort_reason
+
+            report["overall_status"] = blocking_status
             report["records_loaded"] = 0
             report["records_rejected"] = len(df)
+
+            issue_label = (
+                "schema_inconsistency"
+                if abort_reason == "schema_break_on_identifier"
+                else abort_reason
+            )
 
             impact_result = run_impact_analysis(
                 source_name=source_name,
                 execution_id=execution_id,
-                issue="schema_inconsistency"
+                issue=issue_label
             )
-
             report["impact_analysis"] = [impact_result]
 
             duration_seconds = time.perf_counter() - start_time
@@ -1046,44 +1064,7 @@ def process_and_load(source_name: str, df: pd.DataFrame, contract_name: str, war
                 warehouse=warehouse,
                 execution_id=execution_id,
                 health_score=health_score,
-                overall_status="FAIL",
-                records_loaded=0,
-                records_rejected=len(df),
-                duration_seconds=duration_seconds
-            )
-
-            _notify_team(source_name, report)
-            _write_audit_report(report, source_name)
-
-            _print_validation_summary(report)
-
-            fail_lineage_run( run_id=execution_id, source_name=source_name)
-
-            return report
-
-
-        if abort:
-            report["overall_status"] = "ABORTED"
-            report["abort_reason"] = abort_reason
-            report["records_loaded"] = 0
-            report["records_rejected"] = len(df)
-
-            if abort_reason == "volumetry_anomaly":
-                impact_result = run_impact_analysis(
-                    source_name=source_name,
-                    execution_id=execution_id,
-                    issue="volumetry_anomaly"
-                )
-
-                report["impact_analysis"] = [impact_result]
-
-            duration_seconds = time.perf_counter() - start_time
-
-            update_execution(
-                warehouse=warehouse,
-                execution_id=execution_id,
-                health_score=health_score,
-                overall_status="ABORTED",
+                overall_status=blocking_status,
                 records_loaded=0,
                 records_rejected=len(df),
                 duration_seconds=duration_seconds
@@ -1109,13 +1090,12 @@ def process_and_load(source_name: str, df: pd.DataFrame, contract_name: str, war
 
             _notify_team(source_name, report)
             _write_audit_report(report, source_name)
-
             _print_validation_summary(report)
 
-            abort_lineage_run(
-                run_id=execution_id,
-                source_name=source_name
-            )
+            if blocking_status == "FAIL":
+                fail_lineage_run(run_id=execution_id, source_name=source_name)
+            else:
+                abort_lineage_run(run_id=execution_id, source_name=source_name)
 
             return report
 
@@ -1143,7 +1123,7 @@ def process_and_load(source_name: str, df: pd.DataFrame, contract_name: str, war
             impact_results.append(impact_result)
 
         if impact_results:
-            report["impact_analysis"] = [impact_result]
+            report["impact_analysis"] = impact_results    
 
         df_valid, df_invalid = route_records(df, contract)
 

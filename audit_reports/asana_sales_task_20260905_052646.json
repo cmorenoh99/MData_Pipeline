@@ -1,0 +1,180 @@
+{
+  "execution_id": "466de885-bf96-491d-8e71-64bb48f98a9e",
+  "source": "asana_sales_task",
+  "execution_timestamp": "2026-09-05T05:26:44.706248+00:00",
+  "record_count": 5000,
+  "health_score": 100.0,
+  "validations": [
+    {
+      "validation": "uniqueness",
+      "status": "PASS",
+      "total_records": 5000,
+      "unique_records": 5000,
+      "duplicates_found": 0
+    },
+    {
+      "validation": "completeness",
+      "status": "PASS",
+      "threshold_percent": 5,
+      "fields": {
+        "name": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "project_id": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "restaurant": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "id": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        },
+        "country": {
+          "status": "PASS",
+          "null_percent": 0.0,
+          "nulls": 0
+        }
+      }
+    },
+    {
+      "validation": "schema_consistency",
+      "status": "PASS",
+      "fields": {
+        "gid": {
+          "status": "PASS",
+          "expected_type": "int",
+          "actual_dtype": "int64"
+        },
+        "resource_subtype": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "name": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "project_id": {
+          "status": "PASS",
+          "expected_type": "int",
+          "actual_dtype": "int64"
+        },
+        "project_name": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "section_id": {
+          "status": "PASS",
+          "expected_type": "int",
+          "actual_dtype": "int64"
+        },
+        "section_name": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "created_at": {
+          "status": "PASS",
+          "expected_type": "timestamp",
+          "actual_dtype": "datetime64[us, UTC]"
+        },
+        "assigne_id": {
+          "status": "PASS",
+          "expected_type": "int",
+          "actual_dtype": "int64"
+        },
+        "assigne_name": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "assigne_email": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "id": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "restaurant": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "country": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "date_sale": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "lost_reason": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        },
+        "completed": {
+          "status": "PASS",
+          "expected_type": "bool",
+          "actual_dtype": "bool"
+        },
+        "completed_at": {
+          "status": "PASS",
+          "expected_type": "timestamp",
+          "actual_dtype": "datetime64[us, UTC]"
+        },
+        "actual_time_minutes": {
+          "status": "PASS",
+          "expected_type": "int",
+          "actual_dtype": "int64"
+        },
+        "modified_at": {
+          "status": "PASS",
+          "expected_type": "timestamp",
+          "actual_dtype": "datetime64[us, UTC]"
+        },
+        "permalink_url": {
+          "status": "PASS",
+          "expected_type": "string",
+          "actual_dtype": "str"
+        }
+      }
+    },
+    {
+      "validation": "project_integrity",
+      "status": "PASS",
+      "expected_project_id": "1216713295378538",
+      "expected_project_name": "Sales",
+      "mismatched_records": []
+    },
+    {
+      "validation": "volumetry",
+      "status": "PASS",
+      "current_count": 5000,
+      "historical_mean": 5000.0,
+      "historical_std": 0.0,
+      "z_score": 0.0,
+      "threshold": 2.5,
+      "history_count": 31,
+      "window_days": 7
+    }
+  ],
+  "overall_status": "PASS",
+  "records_loaded": 5000,
+  "records_rejected": 0
+}

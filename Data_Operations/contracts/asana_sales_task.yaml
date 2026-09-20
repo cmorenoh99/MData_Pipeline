@@ -53,7 +53,7 @@ volumetry:
   z_score_threshold: 2.5
 
 project_integrity:
-  expected_project_id: "1216713295378538"   # reemplazar con el gid real
+  expected_project_id: "1216713295378538" 
   expected_project_name: "Sales"
 
 health_score:
